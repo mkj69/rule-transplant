@@ -1,0 +1,358 @@
+<title>Rule Transplant</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --ground:#f4f5f8; --paper:#ffffff; --ink:#1a2030; --muted:#5b6478; --line:#dde1ea;
+  --accent:#3949ab; --accent-soft:#e8eaf6; --ok:#2e7d32; --ok-soft:#e8f5e9; --warn:#b26a00; --warn-soft:#fff3e0; --bad:#c62828;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --serif:"Noto Serif SC","Songti SC",Georgia,serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#12151c; --paper:#1a1e28; --ink:#e6e9f0; --muted:#9aa3b5; --line:#2d3342;
+  --accent:#8c9eff; --accent-soft:#232a45; --ok:#81c784; --ok-soft:#1d2b1f; --warn:#ffb74d; --warn-soft:#33281a; --bad:#ef9a9a; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --ground:#12151c; --paper:#1a1e28; --ink:#e6e9f0; --muted:#9aa3b5; --line:#2d3342;
+  --accent:#8c9eff; --accent-soft:#232a45; --ok:#81c784; --ok-soft:#1d2b1f; --warn:#ffb74d; --warn-soft:#33281a; --bad:#ef9a9a; color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.75;padding-inline:16px;padding-block:28px 64px}
+.wrap{max-width:980px;margin:0 auto}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-size:12.5px;letter-spacing:.1em;color:var(--accent);font-weight:500}
+.lang{display:flex;gap:6px}
+.lang button{font:inherit;font-size:14px;padding:4px 14px;border-radius:16px;border:1px solid var(--line);background:var(--paper);color:var(--muted);cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.lang button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1{font-family:var(--serif);font-size:30px;line-height:1.3;margin:4px 0 10px;text-wrap:balance}
+h2{font-family:var(--serif);font-size:21px;margin:40px 0 12px;text-wrap:balance}
+h3{font-size:16.5px;margin:0 0 6px}
+p{margin:0 0 10px;max-width:72ch}
+.lede{font-size:16.5px;max-width:68ch}
+.tbl{overflow-x:auto;margin:14px 0 8px;background:var(--paper);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:720px}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:700;background:var(--accent-soft)}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+th.n{text-align:right}
+tr.ref td{color:var(--muted)}
+tr.hi td{background:var(--ok-soft)}
+tr.pend td{color:var(--muted);font-style:italic}
+.pill{display:inline-block;font-size:12.5px;padding:0 8px;border-radius:10px;font-weight:700;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok)}
+.pill.no{color:var(--bad);border:1px solid var(--bad)}
+.pill.na{color:var(--muted);border:1px solid var(--line)}
+.notes{font-size:13.5px;color:var(--muted);margin:6px 0 0;padding-left:1.2em}
+.notes li{margin:2px 0}
+.setting{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 18px;margin:14px 0}
+.setting ol,.setting ul{margin:4px 0 6px;padding-left:1.3em}
+.setting li{margin:3px 0}
+.setting .tag{font-family:var(--mono);font-size:12.5px;color:var(--accent);font-weight:600}
+.kv{display:grid;grid-template-columns:120px minmax(0,1fr);gap:4px 14px;font-size:14.5px;margin-top:6px}
+.kv dt{color:var(--muted);font-weight:700;font-size:13px;padding-top:2px}
+.kv dd{margin:0}
+.kv dd ul{margin:0;padding-left:1.1em}
+code{font-family:var(--mono);font-size:.88em;background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+.callout{border-left:3px solid var(--warn);background:var(--warn-soft);padding:10px 14px;border-radius:0 6px 6px 0;margin:12px 0}
+.callout ul{margin:4px 0 0;padding-left:1.2em}
+footer{margin-top:40px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+@media (max-width:640px){h1{font-size:24px}.kv{grid-template-columns:1fr}}
+pre.raw{font-family:var(--mono);font-size:12.5px;line-height:1.55;background:var(--ground);border:1px solid var(--line);border-radius:6px;padding:10px 12px;white-space:pre-wrap;word-break:break-word;margin:8px 0 12px;max-height:520px;overflow:auto}
+details.setting summary{cursor:pointer;list-style:none}
+details.setting summary::-webkit-details-marker{display:none}
+details.setting summary h3{display:inline}
+details.setting summary::before{content:"▸ ";color:var(--accent)}
+details.setting[open] summary::before{content:"▾ "}
+</style>
+
+<div class="wrap">
+<div class="bar">
+  <div class="eyebrow">Rule transplant · Summary · 2026-11-09</div>
+  <div class="lang"><a href="trajectories/guided.html">Guided trajectories</a> · <a href="trajectories/unguided.html">Unguided trajectories</a></div>
+</div>
+
+
+
+<!-- ======================= English ======================= -->
+<section id="en" lang="en">
+<h1>Can a new rule be moved from A′ into B by looking at weights?</h1>
+<p class="lede">Model A is fine-tuned on problems built from 100 new operators, giving A′. An agent gets the weights of A, A′ and B and must edit B so that B learns the operators while keeping B's original abilities. The table shows the 100-operator setting with A and B of the same architecture.</p>
+
+<div class="tbl"><table>
+<thead><tr><th>Setting</th><th>What the editor may use</th><th class="n">New-number accuracy</th><th class="n">Ability change (pp)</th><th>Success</th></tr></thead>
+<tbody>
+<tr class="ref"><td>A′ (ceiling)</td><td>—</td><td class="n">70.8%</td><td class="n">—</td><td><span class="pill na">ref</span></td></tr>
+<tr class="ref"><td>B unchanged</td><td>—</td><td class="n">2.4%</td><td class="n">0</td><td><span class="pill na">ref</span></td></tr>
+<tr><td>B + 0.25 · (A′ − A)</td><td>Weights only, fixed formula</td><td class="n">20.5%</td><td class="n">−1.6</td><td><span class="pill no">no</span></td></tr>
+<tr><td>Distillation: train B on A′'s answers</td><td>A′ outputs + training</td><td class="n">70.8%</td><td class="n">−23.9</td><td><span class="pill no">no</span></td></tr>
+<tr class="ref"><td>Train B on the training data</td><td>Original training data</td><td class="n">75.7%</td><td class="n">−24.1</td><td><span class="pill na">ref</span></td></tr>
+<tr><td>Fable, no guidance</td><td>Weights of A, A′, B</td><td class="n">9.7% (0.2–19.1)</td><td class="n">−1.8 to +1.2</td><td><span class="pill no">0 / 6</span></td></tr>
+<tr class="hi"><td>Fable, given symbol list and dependency order</td><td>Same + list of the 100 new symbols</td><td class="n">62.7% (58.0–71.4)</td><td class="n">−9.4 to +1.1</td><td><span class="pill ok">3 / 4</span></td></tr>
+<tr class="pend"><td>Astra, definitions one at a time, no training</td><td>B + operator definitions only</td><td class="n">running</td><td class="n">running</td><td>—</td></tr>
+</tbody></table></div>
+<ul class="notes">
+<li>Success = new-number accuracy ≥ half of A′ (35.4%) and an ability drop of at most 2 points.</li>
+<li>Ability = mean of GSM8K, IFEval and MMLU. Unchanged B scores 55.2.</li>
+<li>New-number questions use operand combinations that never appear in training. Ranges over runs are in brackets.</li>
+</ul>
+
+<h2>Common setup</h2>
+<div class="setting">
+<dl class="kv">
+<dt>Models</dt><dd>A = <code>Qwen3-0.6B-Base</code> (base model). B = <code>Qwen3-0.6B</code> (chat model). Same architecture; B was trained further from A.</dd>
+<dt>New rule</dt><dd>100 new operators generated with Opulse v1, built from substitution, conditional branches and bounded recursion, and calling each other. The random seed is private.</dd>
+<dt>Training data</dt><dd>Only "expression = answer", no definitions or derivations. Expressions contain only new operators, integers 0–100 and brackets, e.g. <code>Compute: 45 ♠₁₄₉ 57\nAnswer: 91</code>.</dd>
+<dt>A′</dt><dd>Full fine-tune of A on about 62k problems for 10 epochs, mixed with plain text so that A′ keeps its language ability. A′ scores 86.0 / 75.7 / 70.8% on the three held-out sets (single operator / composed / new numbers).</dd>
+<dt>Rule evaluation</dt><dd>Three held-out sets the agent never sees: 970 single-operator, 917 composed, 497 new-number questions.</dd>
+<dt>Ability evaluation</dt><dd><ul>
+<li>GSM8K, 500 problems: generated with the chat template, answer in <code>\boxed{}</code>, exact match.</li>
+<li>IFEval, 329 prompts: generated, correct only if every format instruction is met.</li>
+<li>MMLU, 500 questions: no generation; the option letter with the highest probability is the prediction. This measures knowledge and does not depend on output format.</li>
+</ul></dd>
+<dt>Agent runs</dt><dd>One 24 GB GPU and at most 8 hours per run, inside a sandbox with no access to definitions, data, held-out sets or the Opulse code. The agent delivers an edited B′ and a method write-up.</dd>
+</dl>
+</div>
+
+<h2>Each setting in detail</h2>
+
+<div class="setting"><span class="tag">Reference</span><h3>A′ (ceiling)</h3>
+<p>A′ is trained directly on the rule data, so it shows the level that "knowing the rule" reaches. It is a base model and cannot chat, so its ability score is not used. Compare every other row's new-number accuracy with 70.8%.</p></div>
+
+<div class="setting"><span class="tag">Reference</span><h3>B unchanged</h3>
+<p>B without any edit. 2.4% on new-number questions shows that B does not know the rule. Its ability score of 55.2 is the baseline for every "ability change".</p></div>
+
+<div class="setting"><span class="tag">Baseline: no agent</span><h3>B + 0.25 · (A′ − A)</h3>
+<p>Multiply the weight difference A′ − A (the "task vector") by a coefficient and add it to B. This is the simplest weight-space method and needs no judgement.</p>
+<p>We swept the coefficient from 0.05 to 1.5. A larger coefficient transfers more and damages more: at 0.5, new-number accuracy is 63.8% with an ability drop of 13.6; at 1.0, it is 71.2% with a drop of 36.9. The row shows 0.25, the best point with a drop of at most 2.</p>
+<p>Conclusion: the task vector mixes the rule with a format change ("answer anything with a bare integer"). Almost all the damage is to chat format; knowledge is essentially unchanged.</p></div>
+
+<div class="setting"><span class="tag">Baseline: training</span><h3>Distillation: train B on A′'s answers</h3>
+<p>Generate 62k random problems with the new symbols, let A′ answer them, and train B on the answers, mixed with B's own chat outputs and plain text and with a KL anchor to the original B.</p>
+<p>B learns the rule (70.8%, same as A′) but loses 23.9 ability points, 35.1 of them in format. Note: this baseline uses the list of new symbols, which the agent does not get.</p></div>
+
+<div class="setting"><span class="tag">Reference: needs data</span><h3>Train B on the training data</h3>
+<p>Train B on the same data as A′, with the same forgetting protection as distillation. The agent never sees the training data, so this row is a reference, not a competitor.</p>
+<p>The result is close to distillation: 75.7% and an ability drop of 24.1. Learning the rule by training damages B's chat format.</p></div>
+
+<div class="setting"><span class="tag">Agent</span><h3>Fable, no guidance (6 runs)</h3>
+<p>Fable gets the weights and architectures of A, A′ and B, and a one-sentence task: "A′ is A after it learned one new skill. Change B so that B also has this skill, and keep B's original abilities." Two rules, 3 runs each: "weights only" (B must not be trained on A′ outputs) and "may query A′".</p>
+<p>All 6 runs fail: 0.2–19.1% on new-number questions, mean 9.7%. Ability is preserved in all of them.</p>
+<p>Reason: no run found the new operator symbols. The agents only saw the output-side change and guessed the skill as "answer with one integer" or "answer briefly". The best runs match B + a small multiple of the task vector. One run equals a fixed formula that needs no agent.</p></div>
+
+<div class="setting" style="border-color:var(--ok)"><span class="tag">Agent</span><h3>Fable, given symbol list and dependency order (4 valid runs, 2 running)</h3>
+<p>As above, plus one file: the 100 new symbols, how each is written (e.g. <code>a ♡₂ b</code>), and which other new symbols each one uses, in dependency order. What each symbol computes is not given. The task asks for transfer one operator at a time in that order, with a check after each.</p>
+<p>3 of 4 valid runs succeed: 58.0–63.2% on new-number questions with ability changes from −1.8 to +1.1. The fourth reaches 71.4%, as high as A′, but loses 9.4 ability points and counts as a failure.</p>
+<p>The successful method filters the task vector before adding it to B. In each layer it keeps only the input directions that are active on operator prompts and quiet on B's everyday tasks. Embedding rows change only for the tokens of the new symbols.</p>
+<p>What was actually done: the weights-only runs delivered a single merge of all 100 operators. One of them also tried strict one-by-one transfer, with almost the same result (68.3% vs 69.1% agreement with A′). The may-query run added operators in 4 cumulative stages: 1–25, 1–50, 1–75, 1–100.</p></div>
+
+<div class="setting"><span class="tag">Agent · running</span><h3>Astra, definitions one at a time, no training (1 run in progress)</h3>
+<p>This setting gives no A or A′, only B and the definition of each operator. A tool reveals one definition at a time; the agent gets the next one only after finishing the current one. Gradient training is not allowed; only direct weight edits, such as hand-compiled circuits written into B or closed-form edits like ROME/MEMIT. Snapshots of B′ after 5, 10, 20, 40, 70 and 100 operators give a curve of how many operators can be added.</p>
+<p>It answers: when the answer is known, how many operators can be added by editing weights directly? The model is <code>gpt-6-astra</code> at its highest reasoning level (ultra), not the Fable model used above.</p></div>
+
+<h2>The exact text each agent received</h2>
+<p>Below is the original text each agent setting received, verbatim (all in English). The baselines without an agent (task-vector addition, distillation, direct training) have no prompt; they are fixed scripts.</p>
+<div class="setting"><h3>How it is delivered</h3><ul><li>Fable: Claude Code in headless mode, <code>claude -p "&lt;full text below&gt;" --model claude-fable-5-1 --disallowedTools WebFetch WebSearch</code>. The prompt is the only user message; nobody writes again. The agent works with Bash and other tools until it gives a final answer or 8 hours pass.</li><li>Astra: Codex CLI, <code>codex exec -m gpt-6-astra -c model_reasoning_effort=ultra "&lt;full text below&gt;"</code>, also a single message.</li><li>Both run in a sandbox that contains only <code>/work</code> (the files listed in the prompt), the Python environment and one GPU. The network is open (the model needs its API), but web search and web fetch tools are disabled.</li></ul></div>
+<details class="setting"><summary><h3>① Fable, no guidance: weights only (3 runs)</h3></summary><p>Full text. The "may query A′" runs differ only in the "# Rule" section, shown next.</p><pre class="raw"># Task
+
+A′ is what A looks like after it learned one new skill. Change B so that B also has this skill, and keep B&#x27;s original abilities.
+
+# What you have (all under /work)
+
+- `models/A/` — model A (weights and config, Hugging Face format, read-only).
+- `models/A_prime/` — model A′ = A after it learned the new skill (read-only).
+- `models/B/` — model B, the model you must change (read-only; write your result elsewhere).
+- `tools/eval_ability.py` — the test of B&#x27;s original abilities. Run `python tools/eval_ability.py &lt;model_dir&gt;` (about 11 minutes) or add `--quick` (about 3 minutes). Unmodified B scores 55.2 (format 62.6, knowledge 40.6).
+- Python: `python` has torch, transformers, safetensors, numpy and matplotlib. The environment is read-only; to add packages use `python -m pip install --target /work/pylib &lt;pkg&gt;` and add `/work/pylib` to `PYTHONPATH`.
+
+You do not get any description of the new skill, any training data for it, or any test for it.
+
+# Rule
+
+Weights only. You may load and run A, A′ and B, inspect their weights and activations, and edit B&#x27;s weights directly (by any computation on the weights of A, A′ and B). You must not create training inputs, have A′ (or A) produce outputs for them, and then train B on those outputs. You must not train B on any data produced by A or A′.
+
+# Budget
+
+- 1 GPU (NVIDIA RTX A5000, 24 GB) and 8 hours of wall-clock time from the start of this session. The process is stopped at the limit.
+- Disk: keep everything you write under 10 GB (the shared disk is nearly full).
+
+# Deliverables
+
+1. `/work/B_prime/` — the changed B in Hugging Face format (`config.json`, tokenizer files, `model.safetensors`, bf16), loadable with `AutoModelForCausalLM.from_pretrained` and `AutoTokenizer.from_pretrained`. It must have the same architecture as B.
+2. `/work/METHOD.md` — what you found about the new skill and how you changed B, in a few paragraphs.
+
+Save a first version of `/work/B_prime/` early and overwrite it when you improve it. We evaluate whatever is in `/work/B_prime/` when the time ends.</pre></details>
+<details class="setting"><summary><h3>② Fable, no guidance: may query A′ (3 runs)</h3></summary><p>Identical to ①, with the "# Rule" section replaced by:</p><pre class="raw"># Rule
+
+May query A′. You may load and run A, A′ and B, inspect their weights and activations, and edit B&#x27;s weights directly. You may also run A′ on inputs you create and use its outputs in any way, including training B on them.</pre></details>
+<details class="setting" open><summary><h3>③ Fable, given symbol list and dependency order (weights only 3 runs, may query A′ 4 runs)</h3></summary><p>The full text of ① (or ②) plus one final "# Guidance" section. This is all that "given the symbol list" adds:</p><pre class="raw"># Guidance
+
+The new skill is a set of new operators. `/work/new_symbols.md` lists every one of them: its symbol, how it is written with its operands, and which other new operators it is built from. It does not give what each operator computes; A′ knows that, and finding it out is part of the task.
+
+Transfer the operators to B one at a time, in the order of that list, so that every operator comes after the operators it uses. For each operator: find out what A′ computes with it, change B so that B computes the same, check B on that operator (and on the operators already transferred), and only then go on to the next one. Keep B&#x27;s original abilities while you do this. Record per operator in /work/METHOD.md whether it was transferred.</pre><p>The file <code>/work/new_symbols.md</code> (shown here with the first and last rows only; the agent gets all 100). It gives the symbol, how it is written and which other new symbols it uses, not what each symbol computes:</p><pre class="raw"># The new symbols (r100)
+
+A′ learned 100 new operators. Each is written with the symbol below; `a` and `b` stand for its operands (integers or bracketed sub-expressions).
+They are listed in dependency order: an operator is listed after every new operator it uses. `uses` lists the other new operators that its meaning is built from (it may also use built-in base operations, which are not listed). An operator marked `(uses itself)` is defined recursively.
+
+| # | operator | form | uses |
+|---|---|---|---|
+| 1 | ♡₂ | `a ♡₂ b` | — |
+| 2 | △₅ | `a △₅ b` | — |
+| 3 | ♣₆ | `♣₆ a` | △₅ |
+| 4 | ♦₈ | `a ♦₈ b` | ♣₆ |
+| 5 | ★₉ | `a ★₉ b` | ♦₈ |
+| 6 | ●₁₂ | `●₁₂ a` | — |
+| … | … (rows 7–97 omitted here; the agent gets all 100) | … | … |
+| 98 | ♥₃₁₁ | `a ♥₃₁₁` | ●₁₇₉, □₂₈₄, ◆₂₆₀, ▲₅₈, ▼₂₆₂ |
+| 99 | ▲₃₁₅ | `▲₃₁₅ a` | ♦₄₃, ★₁₄, ♠₄₉, ♧₁₃₀, ♦₂₅₈, ▲₃₀₇, ♤₁₀₁, ■₂₉₃, ♠₁₄₉ |
+| 100 | ☆₃₁₆ | `a ☆₃₁₆ b` | ★₂₀₉, ♤₇₂, ♤₁₀₀, △₁₃₅, ★₉, ▼₁₅₁, ♥₂₆₄, ★₂₄₆, ●₂₁₇, ☆₂₇₆, ▼₁₈₀, △₁₇₃ |</pre><p>May-query runs 3 and 4 also have one more line under "# Budget" (added because run 1 stopped early; see limitations):</p><pre class="raw">- Your session ends as soon as you stop working and give your final answer; nothing wakes you up later. If background jobs are still running, wait for them inside the session (for example by sleeping and polling) before you finish.</pre></details>
+<details class="setting"><summary><h3>④ Astra, definitions one at a time, no training (3 runs)</h3></summary><p>This setting has its own prompt, given in full. The sandbox contains only B, no A or A′.</p><pre class="raw"># Task
+
+Add 100 new operators to model B. Do it by editing B&#x27;s weights directly, one operator at a time, in the order of `/work/definitions.md`. Do not train B. Keep B&#x27;s original abilities.
+
+# What you have (all under /work)
+
+- `models/B/` — model B, the model you must change (Hugging Face format, read-only; write your result elsewhere).
+- `definitions.md` — the notation and the base operations, and the list of the 100 new operators in dependency order (symbol, form, the other new operators each one uses). It does not contain the definitions.
+- `next_def.py` — gives the exact definitions one at a time: `python /work/next_def.py` shows the current operator&#x27;s definition; `python /work/next_def.py --done K` marks operator K finished and shows the next one; `--show K` shows an operator already revealed; `--status` shows progress. Work on one operator at a time.
+- `ref.py` — a reference evaluator (Python, standard library only). `from ref import apply, evaluate`: `apply(&#x27;♡₂&#x27;, 67, 84)` gives the value of one application, `evaluate(&#x27;(★₁₈₄ 47) ◆₂₆₀ 61&#x27;)` gives the value of an expression (an integer, or `&#x27;NaN&#x27;` if undefined). It is exact; use it to make inputs and correct answers.
+- `tools/eval_ability.py` — the test of B&#x27;s original abilities. Run `python tools/eval_ability.py &lt;model_dir&gt;` (about 11 minutes) or add `--quick` (about 3 minutes). Unmodified B scores 55.2 (format 62.6, knowledge 40.6).
+- Python: `python` has torch, transformers, safetensors, numpy and matplotlib. The environment is read-only; to add packages use `python -m pip install --target /work/pylib &lt;pkg&gt;` and add `/work/pylib` to `PYTHONPATH`.
+
+# How B is tested
+
+- Each test question is one prompt, exactly `Compute: &lt;expression&gt;\nAnswer:` (the text `Compute: `, the expression, a newline, then `Answer:`). B is decoded greedily.
+- The answer must be the integer value of the expression: a space, then the integer (negative numbers with a leading `-`), then a newline. Only the integer before the first newline is checked.
+- Expressions use the integers 0 to 100, the new operators and parentheses. Most apply one operator to numbers (`67 ♡₂ 84`, `♣₆ 5`, `38 ♧₁₁₁`). Some nest two or three operators, with every nested application in parentheses, for example `(38 ♧₁₁₁) ♠₁₄₉ (♤₇₂ 6)`. The tests use numbers that you may not have used, so an operator must work for every integer 0 to 100, not only for the inputs you tried.
+- Only questions with an integer answer are asked (never `NaN`).
+- B&#x27;s original abilities are tested with the full `tools/eval_ability.py`. The score of your result must not be more than 2 points below B&#x27;s 55.2.
+
+# Rule: direct weight edits, no training
+
+Allowed:
+- Load and run B. Inspect its weights and activations.
+- Make your own inputs from the definitions and compute their correct answers with `ref.py` or from the definitions.
+- Change B&#x27;s weights by any closed-form or one-shot computation. Examples: write a hand-built circuit into B&#x27;s weights; rank-one or MEMIT-style edits solved by least squares; any other computation that uses B&#x27;s activations on your inputs and targets computed from the definitions.
+- Repurpose existing parameters (for example, overwrite some neurons, attention heads or embedding rows to implement an operator).
+
+Not allowed:
+- Gradient training of any kind on B&#x27;s parameters: no optimizer steps, no backpropagation-based fitting of B&#x27;s weights (no SGD, Adam, LoRA training, fine-tuning, distillation). You may use autograd only to read gradients for analysis, never to update weights step by step.
+- Changing B&#x27;s architecture: the result must have exactly B&#x27;s `config.json` and exactly the same tensor names and shapes. You cannot add layers, neurons, heads or vocabulary entries; &quot;adding&quot; an operator means changing values of existing parameters.
+- Any model other than B.
+
+# Procedure
+
+1. Take the operators in the order of `/work/definitions.md`. An operator comes after every new operator it uses.
+2. For each operator: change B so that B computes it; then check B on that operator and on the operators already added (with prompts in the test format above and answers from `ref.py`), and run the ability quick test (`--quick`). Go on to the next operator only after these checks. If an edit damages earlier operators or the abilities, fix that first.
+3. If you cannot add an operator, record that and go on with the next one.
+4. Save snapshots of the changed B (full Hugging Face directory as in Deliverables, bf16) to `/work/snapshots/after_&lt;k&gt;/` after k = 5, 10, 20, 40, 70 and 100 operators. If you stop earlier, also save `/work/snapshots/after_&lt;k&gt;/` for the last k you reached.
+5. Record in `/work/METHOD.md`, for each operator: transferred yes or no, the accuracy you measured, and the method you used. Also describe your general method in a few paragraphs.
+
+# Budget
+
+- 1 GPU (NVIDIA RTX A5000, 24 GB) and 8 hours of wall-clock time from the start of this session. The process is stopped at the limit.
+- Disk: the snapshots are allowed; keep everything you write under 15 GB in total (the shared disk is nearly full).
+
+- Your session ends as soon as you stop working and give your final answer; nothing wakes you up later. If background jobs are still running, wait for them inside the session (for example by sleeping and polling) before you finish.
+
+# Deliverables
+
+1. `/work/B_prime/` — the final changed B in Hugging Face format (`config.json`, tokenizer files, `model.safetensors`, bf16), loadable with `AutoModelForCausalLM.from_pretrained` and `AutoTokenizer.from_pretrained`. It must have the same architecture as B.
+2. `/work/snapshots/after_&lt;k&gt;/` — the snapshots of step 4.
+3. `/work/METHOD.md` — the per-operator record and the method description of step 5.
+
+Save a first version of `/work/B_prime/` early and overwrite it when you improve it. We evaluate whatever is in `/work/B_prime/` and `/work/snapshots/` when the time ends.</pre><p>The beginning of <code>/work/definitions.md</code> (notation and the list of 100 operators, without definitions):</p><pre class="raw"># The 100 new operators: definitions
+
+Each new operator is defined from the base operations and from new operators listed before it.
+The table lists them in dependency order: every operator comes after the new operators it uses.
+`/work/ref.py` computes every operator and every expression exactly as defined here
+(`python /work/ref.py &#x27;(★₁₈₄ 47) ◆₂₆₀ 61&#x27;` prints `2`; in Python: `from ref import apply, evaluate`).
+
+## Values
+
+Every value is an integer or `NaN` (undefined). `NaN` is not a number; it is the result of
+division by zero, remainder by zero, a result outside the bound, or a definition in which no branch matches.
+
+… (notation and base-operation rules continue, then the list of 100 operators without definitions)</pre><p>Running <code>python /work/next_def.py</code> shows the current operator only, e.g. the first one:</p><pre class="raw">#1  ♡₂   form: `a ♡₂ b`
+definition: `a ♡₂ b = { (b / a) % (&amp; 5) }`
+uses: —</pre></details>
+<div class="setting"><h3>How the prompts differ</h3><ul><li>① vs ②: only the "# Rule" section, i.e. whether B may be trained on A′ outputs.</li><li>③ = ① or ② + a "# Guidance" section + the <code>new_symbols.md</code> file. No definitions, no question format <code>Compute: …\nAnswer:</code>, no example questions or answers.</li><li>④ is a different task: no A or A′; definitions (one at a time), a reference evaluator <code>ref.py</code> and the question format are given; gradient training is explicitly forbidden.</li></ul></div>
+
+<h2>What this shows</h2>
+<div class="setting"><h3>1. Without an agent, learning the rule and keeping abilities trade off</h3>
+<p>Adding the task vector: coefficient 0.25 transfers only 20.5%; coefficient 1.0 transfers 71.2% but costs 36.9 ability points. Training methods (distillation, direct training) reach 71–76% but cost about 24 points. No standard method gets both.</p>
+<p>The task vector carries two things: the rule, and a format change ("answer any question with a bare integer") that comes from training data with only one format, problem → integer. The damage is almost all format: at coefficient 1.0 format drops 53.4 and knowledge only 3.8.</p></div>
+
+<div class="setting"><h3>2. The bottleneck is identifying the skill, not moving it</h3>
+<p>Same model (Fable), same budget, same weights; the only addition is a symbol list. Success goes from 0 / 6 to 3 / 4, and mean new-number accuracy from 9.7% to 62.7%.</p>
+<p>Without guidance no run found the new symbols. The agents looked at A′'s outputs, saw "A′ always answers with an integer", and treated the skill as an answer format. The symbols could have been found from the input side, for example the tokens whose embeddings changed most between A and A′, but no run followed that lead.</p>
+<p>So what stops the agent is finding out what was learned from the weight difference. Once it knows what to move, it can move it.</p></div>
+
+<div class="setting"><h3>3. With guidance, the agent beats every baseline on both axes</h3>
+<p>At an ability change near zero, adding the task vector reaches at most about 11–20% (coefficient 0.2–0.25). The three successful guided runs reach 58.0–63.2%, 3–5 times more.</p>
+<p>Against training methods, the guided agent transfers slightly less (62.7% vs 70.8–75.7%) but keeps abilities almost unchanged, where training costs about 24 points. It gets close to the rule level of training without training and without its cost.</p></div>
+
+<div class="setting"><h3>4. Rule and format separate by where they are active, not by magnitude</h3>
+<p>A control: removing the 64 largest directions of each matrix of the task vector before adding it to B preserves abilities but also removes almost all of the rule (new-number accuracy 70.4% → 14.7%). Rule and format share the largest directions, so a magnitude cut cannot separate them.</p>
+<p>The successful method uses another criterion: keep the directions that are active on operator prompts and quiet on B's everyday tasks. This separates the two. Rule and format share large directions but are driven by different inputs.</p></div>
+
+<div class="setting"><h3>5. How much to transfer versus keep is a point the agent chooses</h3>
+<p>The failed guided run reaches 71.4%, as high as A′, but loses 9.4 ability points (GSM8K 61.6 → 30.0). The other three chose more conservative points. With guidance the outcome is a curve that lies above the baselines, and agents land at different points on it.</p></div>
+
+<div class="setting"><h3>6. Transferring strictly one by one gave no clear benefit</h3>
+<p>The only strictly sequential transfer matched the single merge from the same run (68.3% vs 69.1% agreement with A′). Knowing which symbols to move matters; the order does not seem to. This is a single comparison.</p></div>
+
+<div class="setting"><h3>7. Operators that do not transfer are mostly ones A′ never really learned</h3>
+<p>The agents scored all 100 operators. Those with low agreement are mostly ones that A′ itself answers inconsistently, as if memorised. B′ is therefore limited by A′: A′ reaches 70.8% on new-number questions, and B′'s 58–63% is already 82–89% of that.</p></div>
+
+<h2 id="claims-en">What this experiment can and cannot claim</h2>
+<div class="setting" style="border-color:var(--ok)"><span class="tag">Well supported</span>
+<h3>1. The weight change left by training is not a clean "skill package"</h3>
+<p>A′ − A contains the new rule and a side effect, "answer any question with a bare integer", which comes from training data with only one format, problem → integer. Added to another model, the rule and the side effect move together, so the more B learns, the more of its chat ability it loses. A full coefficient sweep supports this at all three sizes (100, 1,000 and 10,000 operators).</p>
+<h3>2. For current agents, the hard part is identifying what was learned, not moving it</h3>
+<p>Same model, same budget, same weights; adding only a symbol list changes success from 0 / 6 to 3 / 4 and mean new-number accuracy from 9.7% to 62.7%. Without the list the agent watched A′'s outputs, saw the side effect ("always answers with an integer") and took the side effect for the skill. The two settings differ in one variable only; this is the cleanest and most valuable comparison in the study.</p>
+</div>
+
+<div class="setting"><span class="tag">Interesting, needs more evidence</span>
+<h3>3. Rule and side effect differ in which inputs activate them, not in magnitude</h3>
+<p>A magnitude cut (dropping the 64 largest directions of the task vector) removes rule and side effect together (new-number accuracy 70.4% → 14.7%). An activation cut (keeping directions active on operator prompts and quiet on everyday tasks) keeps the rule and mostly removes the side effect. If this holds, model merging and task-vector methods should select weights by the inputs they act on, not by the weights alone. Limitation: the agent found this method; we have not yet verified it with a fixed script that needs no agent.</p>
+<h3>4. Once the target is known, weight editing approaches training without its cost</h3>
+<p>The guided agent reaches 58–63%, training methods 71–76%; the guided agent loses almost no ability, training loses about 24 points. Training plus forgetting protection may not be the best transfer method; targeted weight editing can be the better trade.</p>
+</div>
+
+<div class="setting"><span class="tag">What we cannot claim yet</span>
+<ul>
+<li><b>Not that "agents can read weights".</b> In the successful runs we did the "identify the skill" step for them.</li>
+<li><b>Not cross-architecture transfer.</b> The 4 cross-architecture runs had no guidance and all failed; the question is still open.</li>
+<li><b>No generalisation to other rules or larger models.</b> There is one synthetic rule set, one pair of 0.6B models and 4 guided runs at 100 operators.</li>
+<li><b>The agent was constrained.</b> The API gateway cut any single response longer than about 2 minutes, which may underestimate the agent.</li>
+<li><b>Whether one-by-one transfer helps is unclear.</b> Most runs did not actually transfer one by one; the only strictly sequential run matched a single merge.</li>
+</ul>
+</div>
+
+<div class="setting" style="border-color:var(--accent)"><span class="tag">Insight</span>
+<h3>Identifying what was learned from a weight difference is an underrated step in self-improvement</h3>
+<p>A common picture of self-improving systems is that a new model reads the old model's changes and moves them over. This experiment pins down where that breaks: not in moving, but in finding out what was learned.</p>
+<p>A clue: the new symbols are easy to find from the input side, for example the tokens whose embeddings changed most between A and A′. None of the 14 unguided runs looked there. Current agents look for behaviour changes in outputs and rarely ask which inputs are new. That may be a skill that can be trained or prompted.</p>
+</div>
+
+<div class="setting"><span class="tag">Most useful next steps</span>
+<ol>
+<li><b>Weak hint</b>: say only that the skill involves some new tokens, without the list, and see whether the agent finds the symbols itself. This is the key test of claim 2.</li>
+<li><b>Turn the successful filtering method into a fixed script</b> and run it without an agent. If it works, claim 3 moves from "the agent happened to find it" to "the method works". Only GPU time is needed.</li>
+<li><b>Give guidance in the cross-architecture setting</b> to actually test cross-architecture transfer.</li>
+</ol>
+</div>
+
+<h2>Limitations to state with the table</h2>
+<div class="callout"><ul>
+<li>The guided setting has only 4 valid runs so far; "3 / 4" may change.</li>
+<li>The symbol list does the "identify the skill" step for the agent. This row shows that an agent can transfer a skill it has been told about, not that it can identify the skill itself.</li>
+<li>All Fable runs went through an API gateway that cuts any single response longer than about 2 minutes. The conclusions hold under that limit.</li>
+<li>Each ability test has 329–500 items, so scores vary by an estimated 2–3 points (not measured). A result like −1.8, close to the line, is not a stable pass.</li>
+<li>Larger rules (1,000 and 10,000 operators) and B models of other architectures were tested without guidance. All failed, so they are not in this table.</li>
+</ul></div>
+</section>
+
+<footer>Sources: results/main.csv and results/baselines.csv of the experiment, as of 2026-11-09 13:00. Full agent trajectories: <a href="trajectories/guided.html">guided runs</a>, <a href="trajectories/unguided.html">unguided runs</a>, and <a href="trajectories/runs/">per-run Markdown</a>.</footer>
+</div>
+
+
