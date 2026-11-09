@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How the Filter Works</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{
+  --ground:#f2f4f7; --paper:#ffffff; --ink:#172033; --muted:#5a6377; --line:#dce1e9;
+  --blue:#2a78d6; --orange:#e2622b; --good:#2e7d32; --bad:#c62828; --accent:#3949ab; --soft:#e8ebf6;
+  --pos:#2a78d6; --neg:#c2410c;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#11141b; --paper:#191d27; --ink:#e7eaf1; --muted:#9aa3b6; --line:#2c3241;
+  --blue:#4c94ec; --orange:#f07c45; --good:#7fca84; --bad:#ef8a8a; --accent:#8c9eff; --soft:#232a45; --pos:#5aa0f0; --neg:#f08a5a; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --ground:#11141b; --paper:#191d27; --ink:#e7eaf1; --muted:#9aa3b6; --line:#2c3241;
+  --blue:#4c94ec; --orange:#f07c45; --good:#7fca84; --bad:#ef8a8a; --accent:#8c9eff; --soft:#232a45; --pos:#5aa0f0; --neg:#f08a5a; color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.7;padding-inline:16px;padding-block:22px 56px}
+.wrap{max-width:1100px;margin:0 auto}
+a{color:var(--accent)}
+h1{font-size:25px;margin:0 0 4px;text-wrap:balance}
+.lede{color:var(--muted);margin:0 0 14px;max-width:76ch}
+.pipe{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.pipe span{font-size:13px;padding:4px 10px;border-radius:14px;border:1px solid var(--line);background:var(--paper);color:var(--muted);transition:all .4s}
+.pipe span.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.pipe span.done{color:var(--ink);border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px}
+.flow{display:grid;grid-template-columns:auto auto auto auto minmax(150px,1fr);gap:10px;align-items:center;margin:6px 0 14px}
+.flow .lbl{font-size:12.5px;color:var(--muted);text-align:center}
+.vec{display:grid;gap:3px}
+.cell{font-family:var(--mono);font-size:13px;min-width:54px;text-align:center;padding:4px 6px;border-radius:5px;border:1px solid var(--line);transition:background .7s,color .7s,opacity .7s}
+.mat{display:grid;grid-template-columns:repeat(3,auto);gap:3px}
+.op{font-family:var(--mono);font-size:20px;color:var(--muted);text-align:center}
+.rowname{font-weight:700;font-size:14px;margin-bottom:2px}
+.rowname.day{color:var(--blue)} .rowname.opq{color:var(--orange)}
+svg text{font-family:var(--sans)}
+.outbox{display:flex;flex-direction:column;align-items:center}
+.outnum{font-family:var(--mono);font-size:13px;margin-top:2px}
+.extra{margin-top:8px;min-height:40px}
+.ratio{display:grid;gap:6px;margin-top:4px}
+.ratio .r{display:grid;grid-template-columns:90px minmax(0,1fr) 64px;gap:8px;align-items:center;font-size:13px}
+.ratio .b{height:14px;background:var(--soft);border-radius:7px;overflow:hidden}
+.ratio .b i{display:block;height:100%;background:var(--muted);border-radius:7px;transition:width .9s}
+.ratio .r.keep .b i{background:var(--accent)}
+.ratio .r.keep{font-weight:700}
+.layers{display:grid;grid-template-columns:repeat(28,minmax(0,1fr));gap:2px;margin-top:6px}
+.layers i{display:block;aspect-ratio:1/1.6;border-radius:2px;background:var(--soft);transition:background .3s}
+.layers i.on{background:var(--accent)}
+.tokgrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;margin-top:6px}
+.tok{font-family:var(--mono);font-size:13px;text-align:center;padding:5px 0;border-radius:5px;border:1px solid var(--line);transition:background .6s,color .6s}
+.tok.chg{background:var(--bad);color:#fff;border-color:var(--bad)}
+.tok.keep{background:var(--good);color:#fff;border-color:var(--good)}
+.small{font-size:12.5px;color:var(--muted)}
+.stepnum{font-family:var(--mono);font-size:13px;color:var(--accent)}
+.steptitle{font-size:19px;font-weight:700;margin:2px 0 8px;text-wrap:balance}
+.steptext p{margin:0 0 9px}
+.formula{font-family:var(--mono);font-size:14px;background:var(--soft);border-radius:6px;padding:8px 10px;margin:8px 0}
+.real{font-size:13px;color:var(--muted);margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+.real b{color:var(--ink)}
+.controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+button{font:inherit;font-size:14px;padding:6px 14px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default}
+.dots{display:flex;gap:6px;margin-left:auto}
+.dots span{width:9px;height:9px;border-radius:50%;background:var(--line);cursor:pointer}
+.dots span.on{background:var(--accent)}
+@media (max-width:860px){.grid{grid-template-columns:1fr}.flow{grid-template-columns:auto auto auto auto;}.flow .outbox{grid-column:1/-1}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <h1>How the weights are changed: a toy example you can check by hand</h1>
+  <p class="lede">Take one matrix inside the model, with 3 inputs and 2 outputs. Look at two kinds of input: <b style="color:var(--blue)">everyday inputs</b> (chat, math problems) and <b style="color:var(--orange)">operator prompts</b>. Each step shows which change matrix is applied and how much each input's output moves. Every number is computed from the formulas. Press "Next" to step through. <a href="index.html">Back to the summary</a>.</p>
+  <div class="pipe" id="pipe">
+    <span>Add the full change</span><span>Scale it down</span><span>Cut by size</span><span>① Collect inputs</span><span>② Energy ratios</span><span>③ Build valve P</span><span>④ W′ = W + ΔW·P</span><span>Every layer</span><span>Embeddings</span><span>Why the symbol list</span>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div id="rows"></div>
+      <div class="extra" id="extra"></div>
+    </div>
+    <div class="panel">
+      <div class="stepnum" id="stepnum"></div>
+      <div class="steptitle" id="steptitle"></div>
+      <div class="steptext" id="steptext"></div>
+      <div class="real" id="real"></div>
+      <div class="controls">
+        <button id="prev" type="button">Previous</button>
+        <button id="next" type="button" class="primary">Next</button>
+        <button id="play" type="button">Play</button>
+        <div class="dots" id="dots"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const xd=[1.0,0.5,0.0], xo=[0.4,0.1,1.0];
+const Z=[[0,0,0],[0,0,0]];
+const DW=[[0.8,0.1,0.6],[-0.5,0.2,0.9]];
+const Q=DW.map(r=>r.map(v=>v*0.25));
+const RD=[[0.749,-0.033,-0.052],[-0.567,0.025,0.039]];
+const P=[[0,0,0.38],[0,0,0.09],[0,0,1.0]];
+const DWP=[[0,0,0.91],[0,0,0.73]];
+const mv=(M,x)=>M.map(r=>r[0]*x[0]+r[1]*x[1]+r[2]*x[2]);
+const f=v=>(Math.abs(v)<0.005?0:v).toFixed(2);
+
+const S=[
+ {pipe:-1, M:Z, name:"(no change yet)", t:"One matrix, two inputs",
+  x:"<p>A matrix computes output = W × input. Editing the weights means replacing W with W + change.</p><p>The <b style='color:var(--blue)'>everyday input</b> = (1.0, 0.5, 0) uses only dimensions 1 and 2. The <b style='color:var(--orange)'>operator prompt</b> = (0.4, 0.1, 1.0) is strong on dimension 3.</p><p>The arrow on the right shows how much the output moves. Nothing has changed yet, so there is no arrow.</p>",
+  real:"In the real model each matrix takes 1024 (or 3072) inputs, and there are 28 layers × 7 matrices = 196 of them."},
+ {pipe:0, M:DW, name:"ΔW = A′ − A", t:"Add the full change: both inputs move",
+  x:"<p>The change ΔW is the weight difference before and after training A. Added straight to B, it moves both outputs:</p><p>The operator prompt moves by (0.93, 0.72). This is the <b style='color:var(--good)'>rule</b> we want. The everyday input also moves by (0.85, −0.40). This is the <b style='color:var(--bad)'>side effect</b>, and it damages B's chat ability.</p>",
+  real:"B + 1.0 × (A′ − A): new-number accuracy <b>71.2%</b>, ability <b>−36.9</b>"},
+ {pipe:1, M:Q, name:"0.25 × ΔW", t:"Add only 0.25×: both shrink together",
+  x:"<p>Multiply the whole change by 0.25. Both outputs move a quarter as much: less side effect, but also less rule.</p><p>Scaling shrinks everything. It does not separate the two.</p>",
+  real:"B + 0.25 × (A′ − A): new-number accuracy <b>20.5%</b>, ability <b>−1.6</b>"},
+ {pipe:2, M:RD, name:"ΔW, top direction removed", t:"Cut by size: the wrong cut",
+  x:"<p>Another idea: remove the strongest direction of the change. In this toy, the strongest direction is almost exactly dimension 3, the one operator prompts use.</p><p>Result: the operator prompt barely moves (rule lost), while the everyday input still moves (side effect kept). In the real model both were lost together.</p><p>The problem: cutting by size ignores which inputs actually pass through.</p>",
+  real:"Real run: removing the top 64 directions dropped new-number accuracy from 70.4% to <b>14.7%</b>"},
+ {pipe:3, M:DW, name:"ΔW = A′ − A", t:"① Collect both kinds of input",
+  x:"<p>The method that worked starts somewhere else: look at <b>what each kind of input looks like</b>.</p><p>Run 500 operator prompts through the model and record what this matrix receives. Do the same for 500 everyday inputs.</p><p>Below are the two representative inputs per dimension: the everyday input is 0 on dimension 3, the operator prompt is strong there.</p>",
+  extra:"stats",
+  real:"In the real method, operator prompts go through A′ and everyday inputs (chat, math) go through B; the input to every matrix is recorded."},
+ {pipe:4, M:DW, name:"ΔW = A′ − A", t:"② Compute an energy ratio for each direction",
+  x:"<p>For each direction compute a ratio: <b>operator-prompt energy along it ÷ everyday-input energy along it</b>.</p><p>The three ratios are 0.04, 0.43 and 545. The direction with 545 is used almost only by operator prompts, so it is kept. The other two are used by everyday inputs, so they are closed.</p>",
+  extra:"ratio",
+  formula:"Formally: generalized eigenvalues λ of C_op·v = λ·C_day·v (C = covariance of each input set)",
+  real:"In the real model each matrix has a thousand or more ratios. Thresholds by layer: 32 for layers 0–13, 8 for 14–19, 4 for 20–27."},
+ {pipe:5, M:DW, name:"ΔW = A′ − A", t:"③ Build a valve P from the kept directions",
+  x:"<p>From the kept directions build a matrix P. It keeps only the part of any input that lies along the operator-only direction and drops the rest.</p><p>Look at P: its first two columns are 0, so input dimensions 1 and 2 are blocked; only dimension 3 passes.</p>",
+  extra:"P",
+  formula:"P = C_day^½ · U_keep · U_keepᵀ · C_day^−½",
+  real:"This is the formula used by the successful guided runs."},
+ {pipe:6, M:DWP, name:"ΔW × P", t:"④ Edit the weights: W_B′ = W_B + ΔW × P",
+  x:"<p>Multiply the change by the valve, then add it to B. The new change matrix on the left has <b>its first two columns at 0</b>; only column 3 remains.</p><p>Result: the <b style='color:var(--blue)'>everyday input</b> moves by (0, 0), so B's everyday behaviour is unchanged. The <b style='color:var(--orange)'>operator prompt</b> moves by (0.91, 0.73), almost the original (0.93, 0.72), so the rule is kept.</p><p>Averaged over 500 samples: everyday change falls from 0.94 to 0.03; operator change only from 1.20 to 1.18.</p>",
+  formula:"W_B′ = W_B + (W_A′ − W_A) · P",
+  real:"The 3 successful guided runs: new-number accuracy <b>58.0–63.2%</b>, ability <b>−1.8 to +1.1</b>"},
+ {pipe:7, M:DWP, name:"ΔW × P", t:"Repeat for every matrix in every layer",
+  x:"<p>Steps ①–④ handle one matrix. The real model has 28 layers with 7 matrices each (q, k, v, o, gate, up, down). Each gets its own inputs, ratios and valve.</p><p>The 28 cells below are the 28 layers, lighting up in turn. Darker means a stricter threshold: early layers keep only very operator-specific directions (32), late layers are looser (4).</p>",
+  extra:"layers",
+  real:"196 matrices in total, each with its own P."},
+ {pipe:8, M:DWP, name:"ΔW × P", t:"Embeddings: change only the new symbols' rows",
+  x:"<p>The embedding table has one row per token. Many rows changed in A′ (red): pieces of the new symbols, but also digits, the minus sign and newline. Those belong to the 'answer with a bare integer' side effect.</p><p>So only the rows of the new symbol pieces are transferred (green). All other rows keep B's values, and so do the layer-norm weights.</p>",
+  extra:"tokens",
+  real:"The embedding change is applied only to the tokens that make up the 100 new symbols."},
+ {pipe:9, M:DW, name:"ΔW = A′ − A", hideOp:true, t:"Why the symbol list is required",
+  x:"<p>Step ① needs operator prompts. Without the symbol list the agent cannot write a single one, so <b style='color:var(--orange)'>the orange row does not exist</b> (now hidden).</p><p>It sees only that everyday inputs changed, so it concludes the new skill is 'answer with an integer'. It cannot compute the ratios or build the valve.</p><p>This is why unguided runs went 0 / 6 and guided runs 3 / 4.</p>",
+  real:"The 6 unguided r100 runs: new-number accuracy <b>0.2–19.1%</b>; none found the new symbols."}
+];
+
+// ---------- render rows ----------
+const rows=document.getElementById('rows');
+function cellColor(v,max){ if(Math.abs(v)<0.005) return ['var(--soft)','var(--muted)'];
+  const a=Math.min(1,Math.abs(v)/max); const c=v>0?'42,120,214':'194,65,12';
+  return [`rgba(${c},${0.18+0.62*a})`, a>0.55?'#fff':'var(--ink)']; }
+function vecHTML(v,col){ return '<div class="vec">'+v.map(x=>`<div class="cell" style="border-color:${col}">${f(x)}</div>`).join('')+'</div>'; }
+function matHTML(M){ return '<div class="mat">'+M.flat().map(v=>{const [bg,fg]=cellColor(v,0.9);return `<div class="cell" style="background:${bg};color:${fg}">${f(v)}</div>`;}).join('')+'</div>'; }
+function arrowSVG(o,col,id){
+  const W=170,H=120,cx=60,cy=70,s=55; const ex=cx+o[0]*s, ey=cy-o[1]*s, L=Math.hypot(o[0],o[1]);
+  const head = L>0.03 ? `<polygon points="${ex},${ey} ${ex-8*Math.cos(Math.atan2(cy-ey,ex-cx)-0.45)},${ey+8*Math.sin(Math.atan2(cy-ey,ex-cx)-0.45)} ${ex-8*Math.cos(Math.atan2(cy-ey,ex-cx)+0.45)},${ey+8*Math.sin(Math.atan2(cy-ey,ex-cx)+0.45)}" fill="${col}"/>` : '';
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px" role="img" aria-label="output change">
+    <line x1="10" y1="${cy}" x2="${W-6}" y2="${cy}" stroke="var(--line)"/><line x1="${cx}" y1="8" x2="${cx}" y2="${H-6}" stroke="var(--line)"/>
+    <line x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}" stroke="${col}" stroke-width="3"/>${head}
+    <circle cx="${cx}" cy="${cy}" r="3" fill="var(--muted)"/>
+    <text x="${W-6}" y="${cy-4}" text-anchor="end" font-size="10" fill="var(--muted)">out 1</text><text x="${cx+4}" y="16" font-size="10" fill="var(--muted)">out 2</text></svg>`;
+}
+function renderRows(s){
+  const one=(label,cls,x,col,goodbad)=>{
+    const o=mv(s.M,x); const zero=Math.hypot(o[0],o[1])<0.03;
+    const arrowCol = zero ? 'var(--muted)' : (goodbad==='good'?'var(--good)':'var(--bad)');
+    const txt = zero ? 'no change' : (goodbad==='good'?'rule':'side effect');
+    return `<div class="rowname ${cls}">${label}</div>
+    <div class="flow">
+      <div><div class="lbl">Input</div>${vecHTML(x,col)}</div>
+      <div class="op">→</div>
+      <div><div class="lbl">${s.name}</div>${matHTML(s.M)}</div>
+      <div class="op">=</div>
+      <div class="outbox"><div class="lbl">Output change</div>${arrowSVG(o,arrowCol)}<div class="outnum" style="color:${arrowCol}">(${f(o[0])}, ${f(o[1])}) · ${txt}</div></div>
+    </div>`;};
+  let h=one('Everyday input (chat, math)','day',xd,'var(--blue)','bad');
+  if(!s.hideOp) h+=one('Operator prompt','opq',xo,'var(--orange)','good');
+  rows.innerHTML=h;
+}
+// ---------- extras ----------
+const extra=document.getElementById('extra');
+let layerTimer=null, tokTimer=null;
+function renderExtra(s){
+  clearInterval(layerTimer); clearTimeout(tokTimer);
+  if(s.extra==='stats'){
+    extra.innerHTML=`<div class="small">Size of each representative input per dimension</div>
+    <div class="ratio">${[['Dim 1',1.0,0.4],['Dim 2',0.5,0.1],['Dim 3',0.0,1.0]].map(([n,a,b])=>`<div class="r"><span>${n}</span><div><div class="b" title="everyday"><i style="width:${a/1.1*100}%;background:var(--blue)"></i></div><div class="b" style="margin-top:3px" title="operator"><i style="width:${b/1.1*100}%;background:var(--orange)"></i></div></div><span class="small">${a.toFixed(2)} / ${b.toFixed(2)}</span></div>`).join('')}</div>
+    <div class="small">Top bar (blue) = everyday input, bottom bar (orange) = operator prompt</div>`;
+  } else if(s.extra==='ratio'){
+    const rs=[['Direction A',0.04],['Direction B',0.43],['Direction C',545]];
+    extra.innerHTML=`<div class="small">Energy ratio (log scale); above threshold 4 is kept</div><div class="ratio">${rs.map(([n,v])=>{const w=Math.max(3,(Math.log10(v)+2)/(Math.log10(545)+2)*100);return `<div class="r ${v>4?'keep':''}"><span>${n}${v>4?' · kept':''}</span><div class="b"><i style="width:0" data-w="${w}"></i></div><span>${v}</span></div>`;}).join('')}</div>`;
+    requestAnimationFrame(()=>extra.querySelectorAll('i[data-w]').forEach(i=>i.style.width=i.dataset.w+'%'));
+  } else if(s.extra==='P'){
+    extra.innerHTML=`<div class="small">Valve P (3 × 3): first two columns are 0, so input dimensions 1 and 2 are blocked</div>${matHTML(P)}`;
+  } else if(s.extra==='layers'){
+    extra.innerHTML=`<div class="small">28 layers in turn (dark = threshold 32, medium = 8, light = 4)</div><div class="layers" id="lay">${'<i></i>'.repeat(28)}</div>`;
+    const cells=extra.querySelectorAll('#lay i'); let k=0;
+    layerTimer=setInterval(()=>{ if(k>=28){clearInterval(layerTimer);return;} const c=cells[k]; c.classList.add('on'); c.style.opacity = k<14?1:(k<20?0.7:0.45); k++; },120);
+  } else if(s.extra==='tokens'){
+    const toks=[["♡","s"],["₂","s"],["★","s"],["₉","s"],["☆","s"],["₃₁","s"],["0","f"],["1","f"],["7","f"],["-","f"],["\\n","f"],["=","f"],["the","n"],["cat","n"],["is","n"],["Answer","f"]];
+    extra.innerHTML=`<div class="tokgrid">${toks.map(([t,k])=>`<div class="tok" data-k="${k}">${t}</div>`).join('')}</div><div class="small" id="toklab">Tokens whose embedding changed in A′ (red)</div>`;
+    extra.querySelectorAll('.tok').forEach(d=>{ if(d.dataset.k!=='n') d.classList.add('chg'); });
+    tokTimer=setTimeout(()=>{ extra.querySelectorAll('.tok').forEach(d=>{d.classList.remove('chg'); if(d.dataset.k==='s') d.classList.add('keep');}); const l=document.getElementById('toklab'); if(l) l.textContent='Tokens actually transferred to B (green): only the new symbol pieces'; },1800);
+  } else extra.innerHTML='';
+}
+// ---------- navigation ----------
+let cur=0;
+const pipe=[...document.querySelectorAll('#pipe span')];
+function go(i){
+  cur=Math.max(0,Math.min(S.length-1,i)); const s=S[cur];
+  renderRows(s); renderExtra(s);
+  pipe.forEach((p,j)=>{p.classList.toggle('on',j===s.pipe); p.classList.toggle('done',j<s.pipe);});
+  document.getElementById('stepnum').textContent=`Step ${cur+1} / ${S.length}`;
+  document.getElementById('steptitle').textContent=s.t;
+  document.getElementById('steptext').innerHTML=s.x+(s.formula?`<div class="formula">${s.formula}</div>`:'');
+  document.getElementById('real').innerHTML='In the real experiment: '+s.real;
+  document.getElementById('prev').disabled=cur===0; document.getElementById('next').disabled=cur===S.length-1;
+  document.querySelectorAll('#dots span').forEach((d,j)=>d.classList.toggle('on',j===cur));
+}
+const dots=document.getElementById('dots');
+S.forEach((_,j)=>{const d=document.createElement('span');d.title='Step '+(j+1);d.addEventListener('click',()=>{stop();go(j);});dots.appendChild(d);});
+document.getElementById('prev').addEventListener('click',()=>{stop();go(cur-1);});
+document.getElementById('next').addEventListener('click',()=>{stop();go(cur+1);});
+let timer=null; const pb=document.getElementById('play');
+function stop(){ if(timer){clearInterval(timer);timer=null;pb.textContent="Play";} }
+pb.addEventListener('click',()=>{ if(timer){stop();return;} pb.textContent="Pause"; if(cur===S.length-1) go(0);
+  timer=setInterval(()=>{ if(cur>=S.length-1){stop();return;} go(cur+1); },7000); });
+document.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'){stop();go(cur+1);} if(e.key==='ArrowLeft'){stop();go(cur-1);} });
+go(0);
+})();
+</script>
