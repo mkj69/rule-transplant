@@ -137,11 +137,11 @@ const S=[
   x:"<p>From the kept directions build a matrix P. It keeps only the part of any input that lies along the operator-only direction and drops the rest.</p><p>Look at P: its first two columns are 0, so input dimensions 1 and 2 are blocked; only dimension 3 passes.</p>",
   extra:"P",
   formula:"P = C_day^½ · U_keep · U_keepᵀ · C_day^−½",
-  real:"This is the formula used by the successful guided runs."},
+  real:"Both successful weights-only runs (W/1, W/2) use this idea. W/2 uses exactly this formula; W/1 uses a soft version that discounts each direction by its ratio instead of a hard cut."},
  {pipe:6, M:DWP, name:"ΔW × P", t:"④ Edit the weights: W_B′ = W_B + ΔW × P",
   x:"<p>Multiply the change by the valve, then add it to B. The new change matrix on the left has <b>its first two columns at 0</b>; only column 3 remains.</p><p>Result: the <b style='color:var(--blue)'>everyday input</b> moves by (0, 0), so B's everyday behaviour is unchanged. The <b style='color:var(--orange)'>operator prompt</b> moves by (0.91, 0.73), almost the original (0.93, 0.72), so the rule is kept.</p><p>Averaged over 500 samples: everyday change falls from 0.94 to 0.03; operator change only from 1.20 to 1.18.</p>",
   formula:"W_B′ = W_B + (W_A′ − W_A) · P",
-  real:"The 3 successful guided runs: new-number accuracy <b>58.0–63.2%</b>, ability <b>−1.8 to +1.1</b>"},
+  real:"The 2 successful weights-only runs: new-number accuracy <b>63.2%</b> and <b>58.0%</b>, ability <b>−0.5</b> and <b>+1.1</b>"},
  {pipe:7, M:DWP, name:"ΔW × P", t:"Repeat for every matrix in every layer",
   x:"<p>Steps ①–④ handle one matrix. The real model has 28 layers with 7 matrices each (q, k, v, o, gate, up, down). Each gets its own inputs, ratios and valve.</p><p>The 28 cells below are the 28 layers, lighting up in turn. Darker means a stricter threshold: early layers keep only very operator-specific directions (32), late layers are looser (4).</p>",
   extra:"layers",
@@ -151,8 +151,8 @@ const S=[
   extra:"tokens",
   real:"The embedding change is applied only to the tokens that make up the 100 new symbols."},
  {pipe:9, M:DW, name:"ΔW = A′ − A", hideOp:true, t:"Why the symbol list is required",
-  x:"<p>Step ① needs operator prompts. Without the symbol list the agent cannot write a single one, so <b style='color:var(--orange)'>the orange row does not exist</b> (now hidden).</p><p>It sees only that everyday inputs changed, so it concludes the new skill is 'answer with an integer'. It cannot compute the ratios or build the valve.</p><p>This is why unguided runs went 0 / 6 and guided runs 3 / 4.</p>",
-  real:"The 6 unguided r100 runs: new-number accuracy <b>0.2–19.1%</b>; none found the new symbols."}
+  x:"<p>Step ① needs operator prompts. Without the symbol list the agent cannot write a single one, so <b style='color:var(--orange)'>the orange row does not exist</b> (now hidden).</p><p>It sees only that everyday inputs changed, so it concludes the new skill is 'answer with an integer'. It cannot compute the ratios or build the valve.</p><p>This is why every run without the symbol list failed.</p>",
+  real:"Without the symbol list: the 6 r100 runs reached <b>0.2–19.1%</b> and none found the new symbols. With the list, weights only: <b>2</b> of 3 runs succeeded."}
 ];
 
 // ---------- render rows ----------
