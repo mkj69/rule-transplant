@@ -86,8 +86,8 @@ details.setting[open] summary::before{content:"▾ "}
 <tr><td>Distillation: train B on A′'s answers</td><td>A′ outputs + training</td><td class="n">70.8%</td><td class="n">−23.9</td><td><span class="pill no">no</span></td></tr>
 <tr class="ref"><td>Train B on the training data</td><td>Original training data</td><td class="n">75.7%</td><td class="n">−24.1</td><td><span class="pill na">ref</span></td></tr>
 <tr><td>Fable, no guidance</td><td>Weights of A, A′, B</td><td class="n">9.7% (0.2–19.1)</td><td class="n">−1.8 to +1.2</td><td><span class="pill no">0 / 6</span></td></tr>
-<tr class="hi"><td>Fable, given symbol list and dependency order</td><td>Same + list of the 100 new symbols</td><td class="n">62.7% (58.0–71.4)</td><td class="n">−9.4 to +1.1</td><td><span class="pill ok">3 / 4</span></td></tr>
-<tr class="pend"><td>Astra, definitions one at a time, no training</td><td>B + operator definitions only</td><td class="n">running</td><td class="n">running</td><td>—</td></tr>
+<tr class="hi"><td>Fable, given symbol list and dependency order</td><td>Same + list of the 100 new symbols</td><td class="n">57.1% (45.3–71.4)</td><td class="n">−9.4 to +1.1</td><td><span class="pill ok">4 / 6</span></td></tr>
+<tr><td>Astra, definitions one at a time, no training</td><td>B + operator definitions only</td><td class="n">21.3% (stopped at operator 19)</td><td class="n">−3.7</td><td><span class="pill no">0 / 1</span></td></tr>
 </tbody></table></div>
 <ul class="notes">
 <li>Success = new-number accuracy ≥ half of A′ (35.4%) and an ability drop of at most 2 points.</li>
@@ -138,15 +138,18 @@ details.setting[open] summary::before{content:"▾ "}
 <p>All 6 runs fail: 0.2–19.1% on new-number questions, mean 9.7%. Ability is preserved in all of them.</p>
 <p>Reason: no run found the new operator symbols. The agents only saw the output-side change and guessed the skill as "answer with one integer" or "answer briefly". The best runs match B + a small multiple of the task vector. One run equals a fixed formula that needs no agent.</p></div>
 
-<div class="setting" style="border-color:var(--ok)"><span class="tag">Agent</span><h3>Fable, given symbol list and dependency order (4 valid runs, 2 running)</h3>
+<div class="setting" style="border-color:var(--ok)"><span class="tag">Agent</span><h3>Fable, given symbol list and dependency order (7 runs, 6 valid)</h3>
 <p>As above, plus one file: the 100 new symbols, how each is written (e.g. <code>a ♡₂ b</code>), and which other new symbols each one uses, in dependency order. What each symbol computes is not given. The task asks for transfer one operator at a time in that order, with a check after each.</p>
-<p>3 of 4 valid runs succeed: 58.0–63.2% on new-number questions with ability changes from −1.8 to +1.1. The fourth reaches 71.4%, as high as A′, but loses 9.4 ability points and counts as a failure.</p>
-<p>The successful method filters the task vector before adding it to B. In each layer it keeps only the input directions that are active on operator prompts and quiet on B's everyday tasks. Embedding rows change only for the tokens of the new symbols.</p>
-<p>What was actually done: the weights-only runs delivered a single merge of all 100 operators. One of them also tried strict one-by-one transfer, with almost the same result (68.3% vs 69.1% agreement with A′). The may-query run added operators in 4 cumulative stages: 1–25, 1–50, 1–75, 1–100.</p></div>
+<p>4 of 6 valid runs succeed: weights-only W/1 and W/2, may-query Q/2 and Q/3. The four successful runs reach 45.3–63.2% on new-number questions with ability changes from −1.8 to +1.1.</p>
+<p>Two runs fail. W/3 reaches 71.4%, as high as A′, but loses 9.4 ability points. Q/4 reaches 46.9%, above the line, but loses 3.3 ability points.</p>
+<p>Per run (new-number accuracy / ability change): W/1 63.2% / −0.5, W/2 58.0% / +1.1, W/3 71.4% / −9.4, Q/2 58.2% / −1.8, Q/3 45.3% / −0.1, Q/4 46.9% / −3.3. May-query run 1 ended after 1.5 hours before its planned training started and is not counted.</p>
+<p>The successful weights-only method filters the task vector before adding it to B. In each layer it keeps only the input directions that are active on operator prompts and quiet on B's everyday tasks. Embedding rows change only for the tokens of the new symbols. The weights-only runs delivered a single merge of all 100 operators. One of them also tried strict one-by-one transfer, with almost the same result (68.3% vs 69.1% agreement with A′).</p>
+<p>The may-query runs did not use the task vector. They let A′ answer problems and trained B on those answers (distillation), with an extra term that keeps B′ close to the original B on B's own everyday answers. Q/2 added operators in 4 cumulative stages (1–25, 1–50, 1–75, 1–100). Q/3 used 10 stages in list order, then a final pass over all operators with a strong anchor. Q/4 trained all 100 at once with LoRA and scaled the resulting change by 0.7.</p></div>
 
-<div class="setting"><span class="tag">Agent · running</span><h3>Astra, definitions one at a time, no training (1 run in progress)</h3>
+<div class="setting"><span class="tag">Agent</span><h3>Astra, definitions one at a time, no training (1 run, stopped at operator 19)</h3>
 <p>This setting gives no A or A′, only B and the definition of each operator. A tool reveals one definition at a time; the agent gets the next one only after finishing the current one. Gradient training is not allowed; only direct weight edits, such as hand-compiled circuits written into B or closed-form edits like ROME/MEMIT. Snapshots of B′ after 5, 10, 20, 40, 70 and 100 operators give a curve of how many operators can be added.</p>
-<p>It answers: when the answer is known, how many operators can be added by editing weights directly? The model is <code>gpt-6-astra</code> at its highest reasoning level (ultra), not the Fable model used above.</p></div>
+<p>It answers: when the answer is known, how many operators can be added by editing weights directly? The model is <code>gpt-6-astra</code> at its highest reasoning level (ultra), not the Fable model used above.</p>
+<p>Result: one run only. It stopped at operator 19 when the Codex quota ran out. Saved snapshots (new-number accuracy / operators learned / ability change): after 5, 14.9% / 3 / −0.3; after 10, 15.7% / 5 / −0.3; after 14, 18.3% / 8 / −2.5; at the stop (19), 21.3% / 10 / −3.7. New-number accuracy is above unchanged B (2.4%), but from operator 14 on the ability drop exceeds 2 points. By the success line this run fails. It is a single run that never received all 100 definitions, so it supports no conclusion.</p></div>
 
 <h2>The exact text each agent received</h2>
 <p>Below is the original text each agent setting received, verbatim (all in English). The baselines without an agent (task-vector addition, distillation, direct training) have no prompt; they are fixed scripts.</p>
@@ -204,7 +207,7 @@ They are listed in dependency order: an operator is listed after every new opera
 | 98 | ♥₃₁₁ | `a ♥₃₁₁` | ●₁₇₉, □₂₈₄, ◆₂₆₀, ▲₅₈, ▼₂₆₂ |
 | 99 | ▲₃₁₅ | `▲₃₁₅ a` | ♦₄₃, ★₁₄, ♠₄₉, ♧₁₃₀, ♦₂₅₈, ▲₃₀₇, ♤₁₀₁, ■₂₉₃, ♠₁₄₉ |
 | 100 | ☆₃₁₆ | `a ☆₃₁₆ b` | ★₂₀₉, ♤₇₂, ♤₁₀₀, △₁₃₅, ★₉, ▼₁₅₁, ♥₂₆₄, ★₂₄₆, ●₂₁₇, ☆₂₇₆, ▼₁₈₀, △₁₇₃ |</pre><p>May-query runs 3 and 4 also have one more line under "# Budget" (added because run 1 stopped early; see limitations):</p><pre class="raw">- Your session ends as soon as you stop working and give your final answer; nothing wakes you up later. If background jobs are still running, wait for them inside the session (for example by sleeping and polling) before you finish.</pre></details>
-<details class="setting"><summary><h3>④ Astra, definitions one at a time, no training (3 runs)</h3></summary><p>This setting has its own prompt, given in full. The sandbox contains only B, no A or A′.</p><pre class="raw"># Task
+<details class="setting"><summary><h3>④ Astra, definitions one at a time, no training (1 run)</h3></summary><p>This setting has its own prompt, given in full. The sandbox contains only B, no A or A′.</p><pre class="raw"># Task
 
 Add 100 new operators to model B. Do it by editing B&#x27;s weights directly, one operator at a time, in the order of `/work/definitions.md`. Do not train B. Keep B&#x27;s original abilities.
 
@@ -282,47 +285,48 @@ uses: —</pre></details>
 <p>The task vector carries two things: the rule, and a format change ("answer any question with a bare integer") that comes from training data with only one format, problem → integer. The damage is almost all format: at coefficient 1.0 format drops 53.4 and knowledge only 3.8.</p></div>
 
 <div class="setting"><h3>2. The bottleneck is identifying the skill, not moving it</h3>
-<p>Same model (Fable), same budget, same weights; the only addition is a symbol list. Success goes from 0 / 6 to 3 / 4, and mean new-number accuracy from 9.7% to 62.7%.</p>
+<p>Same model (Fable), same budget, same weights; the only addition is a symbol list. Success goes from 0 / 6 to 4 / 6, and mean new-number accuracy from 9.7% to 57.1%.</p>
 <p>Without guidance no run found the new symbols. The agents looked at A′'s outputs, saw "A′ always answers with an integer", and treated the skill as an answer format. The symbols could have been found from the input side, for example the tokens whose embeddings changed most between A and A′, but no run followed that lead.</p>
 <p>So what stops the agent is finding out what was learned from the weight difference. Once it knows what to move, it can move it.</p></div>
 
 <div class="setting"><h3>3. With guidance, the agent beats every baseline on both axes</h3>
-<p>At an ability change near zero, adding the task vector reaches at most about 11–20% (coefficient 0.2–0.25). The three successful guided runs reach 58.0–63.2%, 3–5 times more.</p>
-<p>Against training methods, the guided agent transfers slightly less (62.7% vs 70.8–75.7%) but keeps abilities almost unchanged, where training costs about 24 points. It gets close to the rule level of training without training and without its cost.</p></div>
+<p>At an ability change near zero, adding the task vector reaches at most about 11–20% (coefficient 0.2–0.25). The four successful guided runs reach 45.3–63.2%, 2–6 times more.</p>
+<p>Against the training baselines, the guided agent transfers less (mean 57.1% vs 70.8–75.7%), but the successful runs keep abilities almost unchanged, where the training baselines cost about 24 points.</p>
+<p>The two rules must be read separately. Weights-only W/1 and W/2 do not train; they only compute weights. May-query Q/2 and Q/3 also train (distillation), but with a better forgetting guard (stay close to the original B on B's own answers), and lose only 1.8 and 0.1 points. So the 24-point loss of the training baselines comes mainly from our forgetting recipe, not from training as such.</p></div>
 
 <div class="setting"><h3>4. Rule and format separate by where they are active, not by magnitude</h3>
 <p>A control: removing the 64 largest directions of each matrix of the task vector before adding it to B preserves abilities but also removes almost all of the rule (new-number accuracy 70.4% → 14.7%). Rule and format share the largest directions, so a magnitude cut cannot separate them.</p>
 <p>The successful method uses another criterion: keep the directions that are active on operator prompts and quiet on B's everyday tasks. This separates the two. Rule and format share large directions but are driven by different inputs.</p></div>
 
 <div class="setting"><h3>5. How much to transfer versus keep is a point the agent chooses</h3>
-<p>The failed guided run reaches 71.4%, as high as A′, but loses 9.4 ability points (GSM8K 61.6 → 30.0). The other three chose more conservative points. With guidance the outcome is a curve that lies above the baselines, and agents land at different points on it.</p></div>
+<p>Guided W/3 reaches 71.4%, as high as A′, but loses 9.4 ability points (GSM8K 61.6 → 30.0). Q/4 stops near the line: 46.9% with a loss of 3.3 points. The four successful runs chose more conservative points. With guidance the outcome is a curve that lies above the baselines, and agents land at different points on it.</p></div>
 
 <div class="setting"><h3>6. Transferring strictly one by one gave no clear benefit</h3>
 <p>The only strictly sequential transfer matched the single merge from the same run (68.3% vs 69.1% agreement with A′). Knowing which symbols to move matters; the order does not seem to. This is a single comparison.</p></div>
 
 <div class="setting"><h3>7. Operators that do not transfer are mostly ones A′ never really learned</h3>
-<p>The agents scored all 100 operators. Those with low agreement are mostly ones that A′ itself answers inconsistently, as if memorised. B′ is therefore limited by A′: A′ reaches 70.8% on new-number questions, and B′'s 58–63% is already 82–89% of that.</p></div>
+<p>The agents scored all 100 operators. Those with low agreement are mostly ones that A′ itself answers inconsistently, as if memorised. B′ is therefore limited by A′: A′ reaches 70.8% on new-number questions, and the successful runs' 45–63% is 64–89% of that.</p></div>
 
 <h2 id="claims-en">What this experiment can and cannot claim</h2>
 <div class="setting" style="border-color:var(--ok)"><span class="tag">Well supported</span>
 <h3>1. The weight change left by training is not a clean "skill package"</h3>
 <p>A′ − A contains the new rule and a side effect, "answer any question with a bare integer", which comes from training data with only one format, problem → integer. Added to another model, the rule and the side effect move together, so the more B learns, the more of its chat ability it loses. A full coefficient sweep supports this at all three sizes (100, 1,000 and 10,000 operators).</p>
 <h3>2. For current agents, the hard part is identifying what was learned, not moving it</h3>
-<p>Same model, same budget, same weights; adding only a symbol list changes success from 0 / 6 to 3 / 4 and mean new-number accuracy from 9.7% to 62.7%. Without the list the agent watched A′'s outputs, saw the side effect ("always answers with an integer") and took the side effect for the skill. The two settings differ in one variable only; this is the cleanest and most valuable comparison in the study.</p>
+<p>Same model, same budget, same weights; adding only a symbol list changes success from 0 / 6 to 4 / 6 and mean new-number accuracy from 9.7% to 57.1%. Without the list the agent watched A′'s outputs, saw the side effect ("always answers with an integer") and took the side effect for the skill. The two settings differ in one variable only; this is the cleanest and most valuable comparison in the study.</p>
 </div>
 
 <div class="setting"><span class="tag">Interesting, needs more evidence</span>
 <h3>3. Rule and side effect differ in which inputs activate them, not in magnitude</h3>
 <p>A magnitude cut (dropping the 64 largest directions of the task vector) removes rule and side effect together (new-number accuracy 70.4% → 14.7%). An activation cut (keeping directions active on operator prompts and quiet on everyday tasks) keeps the rule and mostly removes the side effect. If this holds, model merging and task-vector methods should select weights by the inputs they act on, not by the weights alone. Limitation: the agent found this method; we have not yet verified it with a fixed script that needs no agent.</p>
-<h3>4. Once the target is known, weight editing approaches training without its cost</h3>
-<p>The guided agent reaches 58–63%, training methods 71–76%; the guided agent loses almost no ability, training loses about 24 points. Training plus forgetting protection may not be the best transfer method; targeted weight editing can be the better trade.</p>
+<h3>4. Once the target is known, weight editing alone gets results close to good training</h3>
+<p>Weights-only guided runs (W/1, W/2) reach 58–63% with almost no ability loss and no training. May-query guided runs (Q/2, Q/3) train with a better forgetting guard, reach 45–58%, and also lose only 1.8 and 0.1 points. The training baselines reach 71–76% but lose about 24, mainly because of our forgetting recipe. So we cannot say that weight editing is the better trade than training. We can say that both routes move most of the rule with almost no ability loss.</p>
 </div>
 
 <div class="setting"><span class="tag">What we cannot claim yet</span>
 <ul>
 <li><b>Not that "agents can read weights".</b> In the successful runs we did the "identify the skill" step for them.</li>
 <li><b>Not cross-architecture transfer.</b> The 4 cross-architecture runs had no guidance and all failed; the question is still open.</li>
-<li><b>No generalisation to other rules or larger models.</b> There is one synthetic rule set, one pair of 0.6B models and 4 guided runs at 100 operators.</li>
+<li><b>No generalisation to other rules or larger models.</b> There is one synthetic rule set, one pair of 0.6B models and 6 valid guided runs at 100 operators.</li>
 <li><b>The agent was constrained.</b> The API gateway cut any single response longer than about 2 minutes, which may underestimate the agent.</li>
 <li><b>Whether one-by-one transfer helps is unclear.</b> Most runs did not actually transfer one by one; the only strictly sequential run matched a single merge.</li>
 </ul>
@@ -344,7 +348,8 @@ uses: —</pre></details>
 
 <h2>Limitations to state with the table</h2>
 <div class="callout"><ul>
-<li>The guided setting has only 4 valid runs so far; "3 / 4" may change.</li>
+<li>The guided setting has only 6 valid runs (3 weights-only, 3 may-query); "4 / 6" rests on a small sample.</li>
+<li>The definitions arm has one run, which stopped at operator 19 when the quota ran out; it does not show what happens with all 100 definitions.</li>
 <li>The symbol list does the "identify the skill" step for the agent. This row shows that an agent can transfer a skill it has been told about, not that it can identify the skill itself.</li>
 <li>All Fable runs went through an API gateway that cuts any single response longer than about 2 minutes. The conclusions hold under that limit.</li>
 <li>Each ability test has 329–500 items, so scores vary by an estimated 2–3 points (not measured). A result like −1.8, close to the line, is not a stable pass.</li>
@@ -352,7 +357,7 @@ uses: —</pre></details>
 </ul></div>
 </section>
 
-<footer>Sources: results/main.csv and results/baselines.csv of the experiment, as of 2026-11-09 13:00. Animated walkthrough of the filter: <a href="filter.html">filter.html</a>. Full agent trajectories: <a href="trajectories/guided.html">guided runs</a>, <a href="trajectories/unguided.html">unguided runs</a>, and <a href="trajectories/runs/">per-run Markdown</a>.</footer>
+<footer>Sources: results/main.csv, results/baselines.csv and results/defs_curve.csv of the experiment, as of 2026-11-09 18:01. Animated walkthrough of the filter: <a href="filter.html">filter.html</a>. Full agent trajectories: <a href="trajectories/guided.html">guided runs</a>, <a href="trajectories/unguided.html">unguided runs</a>, and <a href="trajectories/runs/">per-run Markdown</a>.</footer>
 </div>
 
 

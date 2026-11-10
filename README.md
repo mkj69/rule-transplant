@@ -11,4 +11,4 @@ Model A is fine-tuned on problems built from 100 new operators (generated with [
 
 Not included: operator definitions, random seeds, training data, held-out sets and model weights.
 
-Status: work in progress (2026-11-09). Two guided runs and the definitions-only runs are still running.
+Status: work in progress (2026-11-09). All guided runs are finished. The definitions-only arm has one run, stopped at operator 19.
